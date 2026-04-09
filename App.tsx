@@ -46,6 +46,8 @@ const App: React.FC = () => {
   const [account, setAccount] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [walletError, setWalletError] = useState<string | null>(null);
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   // Derived Values
   const effectiveTime = currentTime + simulationOffset;
@@ -116,17 +118,28 @@ const App: React.FC = () => {
   // Handlers
   const connectWallet = async () => {
     if (!window.ethereum) {
-      alert("Please install a wallet extension like MetaMask");
+      setWalletError("No wallet detected. If you have MetaMask installed, try opening this app in a new tab using the button in the top right of the preview.");
+      setShowErrorModal(true);
       return;
     }
     
     setIsConnecting(true);
+    setWalletError(null);
     try {
       const provider = new BrowserProvider(window.ethereum);
       const accounts = await provider.send("eth_requestAccounts", []);
-      setAccount(accounts[0]);
-    } catch (error) {
+      if (accounts && accounts.length > 0) {
+        setAccount(accounts[0]);
+        setIsDemoMode(false);
+      }
+    } catch (error: any) {
       console.error("Error connecting wallet:", error);
+      if (error.code === 4001) {
+        setWalletError("Connection request was rejected. Please try again.");
+      } else {
+        setWalletError("Failed to connect wallet. Please ensure your wallet is unlocked and try again.");
+      }
+      setShowErrorModal(true);
     } finally {
       setIsConnecting(false);
     }
@@ -576,6 +589,34 @@ const App: React.FC = () => {
             </div>
         </div>
       </div>
+
+      {/* Error Modal */}
+      {showErrorModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="glass-card rounded-[32px] p-8 max-w-md w-full border-white/10 shadow-2xl">
+            <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-500 mb-6">
+              <Info className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-3">Wallet Connection Issue</h3>
+            <p className="text-slate-400 text-sm leading-relaxed mb-8">
+              {walletError}
+            </p>
+            <div className="flex flex-col gap-3">
+              <button 
+                onClick={() => setShowErrorModal(false)}
+                className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-bold hover:bg-white/10 transition-all"
+              >
+                Close
+              </button>
+              {!window.ethereum && (
+                <p className="text-[10px] text-slate-500 text-center mt-2">
+                  Tip: Browser wallets often don't work inside previews. Try the "Open in New Tab" button.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

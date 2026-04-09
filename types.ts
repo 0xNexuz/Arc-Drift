@@ -33,3 +33,9 @@ export interface DriftStats {
   totalVolume: number;
   longestDriftDays: number;
 }
+
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
+}

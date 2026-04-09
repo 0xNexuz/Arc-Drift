@@ -14,10 +14,12 @@ import {
   FastForward,
   Wallet,
   ExternalLink,
-  Trash2
+  Trash2,
+  LogOut
 } from 'lucide-react';
+import { BrowserProvider } from 'ethers';
 import { DriftType, DriftStatus, DriftRule, DriftStats } from './types';
-import { DRIFT_CONFIG, MOCK_WALLET_ADDRESS, ARC_TESTNET_EXPLORER } from './constants';
+import { DRIFT_CONFIG, ARC_TESTNET_EXPLORER, DEMO_WALLET_ADDRESS } from './constants';
 
 const ArcLogo = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -41,6 +43,9 @@ const App: React.FC = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [simulationOffset, setSimulationOffset] = useState(0);
+  const [account, setAccount] = useState<string | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   // Derived Values
   const effectiveTime = currentTime + simulationOffset;
@@ -63,6 +68,34 @@ const App: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // Check for existing connection
+  useEffect(() => {
+    const checkConnection = async () => {
+      if (window.ethereum) {
+        try {
+          const provider = new BrowserProvider(window.ethereum);
+          const accounts = await provider.listAccounts();
+          if (accounts.length > 0) {
+            setAccount(accounts[0].address);
+          }
+        } catch (error) {
+          console.error("Error checking connection:", error);
+        }
+      }
+    };
+    checkConnection();
+
+    if (window.ethereum) {
+      window.ethereum.on('accountsChanged', (accounts: string[]) => {
+        if (accounts.length > 0) {
+          setAccount(accounts[0]);
+        } else {
+          setAccount(null);
+        }
+      });
+    }
+  }, []);
+
   // Update statuses based on time
   useEffect(() => {
     setDrifts(prev => prev.map(drift => {
@@ -81,15 +114,49 @@ const App: React.FC = () => {
   }, [effectiveTime]);
 
   // Handlers
+  const connectWallet = async () => {
+    if (!window.ethereum) {
+      alert("Please install a wallet extension like MetaMask");
+      return;
+    }
+    
+    setIsConnecting(true);
+    try {
+      const provider = new BrowserProvider(window.ethereum);
+      const accounts = await provider.send("eth_requestAccounts", []);
+      setAccount(accounts[0]);
+    } catch (error) {
+      console.error("Error connecting wallet:", error);
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const disconnectWallet = () => {
+    setAccount(null);
+    setIsDemoMode(false);
+  };
+
+  const enterDemoMode = () => {
+    setAccount(null);
+    setIsDemoMode(true);
+  };
+
+  const formatAddress = (addr: string) => {
+    if (isDemoMode) return "Demo Wallet";
+    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  };
+
   const handleCreateDrift = () => {
-    if (!recipient || amount <= 0) return;
+    const activeSender = isDemoMode ? DEMO_WALLET_ADDRESS : account;
+    if (!recipient || amount <= 0 || !activeSender) return;
     
     setIsCreating(true);
     
     setTimeout(() => {
       const newDrift: DriftRule = {
         id: Math.random().toString(36).substr(2, 9),
-        sender: MOCK_WALLET_ADDRESS,
+        sender: activeSender,
         recipient,
         amount,
         withdrawn: 0,
@@ -158,10 +225,43 @@ const App: React.FC = () => {
               <span className="text-white font-mono">{stats.activeDrifts}</span>
             </div>
           </div>
-          <button className="flex items-center gap-3 px-5 py-2.5 rounded-2xl glass-card border-white/5 hover:bg-white/5 transition-all">
-            <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse shadow-[0_0_8px_rgba(96,165,250,0.8)]"></div>
-            <span className="text-sm font-mono text-slate-200">{MOCK_WALLET_ADDRESS}</span>
-          </button>
+          
+          {account || isDemoMode ? (
+            <div className="flex items-center gap-2">
+              <button className="flex items-center gap-3 px-5 py-2.5 rounded-2xl glass-card border-white/5 hover:bg-white/5 transition-all group">
+                <div className={`w-2 h-2 rounded-full ${isDemoMode ? 'bg-blue-400' : 'bg-green-400'} animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.8)]`}></div>
+                <span className="text-sm font-mono text-slate-200">{formatAddress(account || '')}</span>
+              </button>
+              <button 
+                onClick={disconnectWallet}
+                className="p-2.5 rounded-xl glass-card border-white/5 hover:bg-red-500/10 hover:text-red-400 transition-all text-slate-500"
+                title={isDemoMode ? "Exit Demo" : "Disconnect"}
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={enterDemoMode}
+                className="px-5 py-2.5 rounded-2xl glass-card border-white/5 hover:bg-white/5 text-slate-400 text-sm font-medium transition-all"
+              >
+                Try Demo
+              </button>
+              <button 
+                onClick={connectWallet}
+                disabled={isConnecting}
+                className="flex items-center gap-3 px-6 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] disabled:opacity-50"
+              >
+                {isConnecting ? (
+                  <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                ) : (
+                  <Wallet className="w-4 h-4" />
+                )}
+                Connect Wallet
+              </button>
+            </div>
+          )}
         </div>
       </nav>
 
@@ -270,16 +370,21 @@ const App: React.FC = () => {
               </div>
 
               <button 
-                onClick={handleCreateDrift}
-                disabled={isCreating || !recipient}
+                onClick={(account || isDemoMode) ? handleCreateDrift : connectWallet}
+                disabled={isCreating || ((account || isDemoMode) && !recipient)}
                 className={`w-full py-5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all shadow-xl ${
-                  isCreating || !recipient ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-slate-100 text-slate-900 hover:bg-white hover:scale-[1.01] active:scale-[0.99] shadow-white/5'
+                  isCreating || ((account || isDemoMode) && !recipient) ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-slate-100 text-slate-900 hover:bg-white hover:scale-[1.01] active:scale-[0.99] shadow-white/5'
                 }`}
               >
                 {isCreating ? (
                   <>
                     <div className="w-5 h-5 border-2 border-slate-900/20 border-t-slate-900 rounded-full animate-spin"></div>
                     Broadcasting...
+                  </>
+                ) : !(account || isDemoMode) ? (
+                  <>
+                    <Wallet className="w-5 h-5" />
+                    Connect Wallet First
                   </>
                 ) : (
                   <>

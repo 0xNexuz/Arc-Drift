@@ -38,5 +38,5 @@ export const DRIFT_CONFIG = {
   }
 };
 
-export const MOCK_WALLET_ADDRESS = "0xArc...7drift";
+export const DEMO_WALLET_ADDRESS = "0xDemo...Drift";
 export const ARC_TESTNET_EXPLORER = "https://explorer.arc.io/tx/";

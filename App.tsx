@@ -48,6 +48,12 @@ const App: React.FC = () => {
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [walletError, setWalletError] = useState<string | null>(null);
   const [showErrorModal, setShowErrorModal] = useState(false);
+  const [isInIframe, setIsInIframe] = useState(false);
+
+  // Detect iframe
+  useEffect(() => {
+    setIsInIframe(window.self !== window.top);
+  }, []);
 
   // Derived Values
   const effectiveTime = currentTime + simulationOffset;
@@ -141,13 +147,17 @@ const App: React.FC = () => {
       let message = "Failed to connect wallet.";
       
       if (error.code === 4001) {
-        message = "Connection request was rejected in your wallet. Please try again and approve the request.";
+        message = "The connection request was cancelled or rejected. Please check if the MetaMask popup is hidden behind other windows, or try clicking 'Connect' again and approving the request.";
       } else if (error.code === -32002) {
-        message = "A connection request is already pending in your wallet. Please open your wallet extension and approve it.";
+        message = "A connection request is already pending. Please open your MetaMask extension (check the fox icon in your browser toolbar) and approve the request there.";
       } else if (error.message?.includes("user rejected")) {
-        message = "The request was rejected. Please try again.";
+        message = "The request was rejected. Please try again and ensure you click 'Confirm' in your wallet.";
       } else {
         message = `Error (${error.code || 'unknown'}): ${error.message || 'Please ensure your wallet is unlocked and try again.'}`;
+      }
+      
+      if (isInIframe) {
+        message += " IMPORTANT: You are currently in a preview frame. Please click the 'Open in New Tab' button in the top right of the screen to ensure your wallet can communicate with the app.";
       }
       
       setWalletError(message);
@@ -232,6 +242,22 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen pb-20 px-4 md:px-8">
+      {/* Iframe Warning */}
+      {isInIframe && (
+        <div className="max-w-7xl mx-auto mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 text-amber-500 text-xs font-medium">
+            <Info className="w-4 h-4 shrink-0" />
+            <span>Wallet extensions may not work inside this preview frame. For the best experience, open the app in a new tab.</span>
+          </div>
+          <button 
+            onClick={() => window.open(window.location.href, '_blank')}
+            className="px-3 py-1.5 bg-amber-500 text-black text-[10px] font-bold rounded-lg hover:bg-amber-400 transition-all whitespace-nowrap"
+          >
+            Open Standalone
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <nav className="flex flex-col sm:flex-row items-center justify-between py-6 md:py-8 max-w-7xl mx-auto gap-6 sm:gap-4">
         <div className="flex items-center gap-3 self-start sm:self-auto">

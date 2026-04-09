@@ -208,14 +208,14 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen pb-20 px-4 md:px-8">
       {/* Header */}
-      <nav className="flex items-center justify-between py-8 max-w-7xl mx-auto">
-        <div className="flex items-center gap-3">
-          <ArcLogo className="w-12 h-12" />
-          <h1 className="text-3xl font-bold tracking-tight arc-logo-gradient">ARC Drift</h1>
+      <nav className="flex flex-col sm:flex-row items-center justify-between py-6 md:py-8 max-w-7xl mx-auto gap-6 sm:gap-4">
+        <div className="flex items-center gap-3 self-start sm:self-auto">
+          <ArcLogo className="w-10 h-10 md:w-12 md:h-12" />
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight arc-logo-gradient">ARC Drift</h1>
         </div>
         
-        <div className="flex items-center gap-4">
-          <div className="hidden md:flex items-center gap-8 text-sm text-slate-400 font-medium">
+        <div className="flex flex-wrap items-center justify-end gap-3 md:gap-4 w-full sm:w-auto">
+          <div className="hidden lg:flex items-center gap-8 text-sm text-slate-400 font-medium">
             <div className="flex flex-col items-end">
               <span className="text-[10px] uppercase text-slate-500 tracking-widest">Locked Value</span>
               <span className="text-white font-mono">{stats.totalValueLocked.toFixed(2)} ARC</span>
@@ -227,10 +227,10 @@ const App: React.FC = () => {
           </div>
           
           {account || isDemoMode ? (
-            <div className="flex items-center gap-2">
-              <button className="flex items-center gap-3 px-5 py-2.5 rounded-2xl glass-card border-white/5 hover:bg-white/5 transition-all group">
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <button className="flex items-center gap-3 px-4 md:px-5 py-2.5 rounded-2xl glass-card border-white/5 hover:bg-white/5 transition-all group flex-1 sm:flex-none justify-center sm:justify-start">
                 <div className={`w-2 h-2 rounded-full ${isDemoMode ? 'bg-blue-400' : 'bg-green-400'} animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.8)]`}></div>
-                <span className="text-sm font-mono text-slate-200">{formatAddress(account || '')}</span>
+                <span className="text-xs md:text-sm font-mono text-slate-200">{formatAddress(account || '')}</span>
               </button>
               <button 
                 onClick={disconnectWallet}
@@ -241,31 +241,31 @@ const App: React.FC = () => {
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 md:gap-3 w-full sm:w-auto justify-end">
               <button 
                 onClick={enterDemoMode}
-                className="px-5 py-2.5 rounded-2xl glass-card border-white/5 hover:bg-white/5 text-slate-400 text-sm font-medium transition-all"
+                className="px-4 md:px-5 py-2.5 rounded-2xl glass-card border-white/5 hover:bg-white/5 text-slate-400 text-xs md:text-sm font-medium transition-all flex-1 sm:flex-none"
               >
                 Try Demo
               </button>
               <button 
                 onClick={connectWallet}
                 disabled={isConnecting}
-                className="flex items-center gap-3 px-6 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] disabled:opacity-50"
+                className="flex items-center gap-2 md:gap-3 px-5 md:px-6 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white text-xs md:text-sm font-bold transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] disabled:opacity-50 flex-1 sm:flex-none justify-center"
               >
                 {isConnecting ? (
                   <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
                 ) : (
                   <Wallet className="w-4 h-4" />
                 )}
-                Connect Wallet
+                <span className="whitespace-nowrap">Connect Wallet</span>
               </button>
             </div>
           )}
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 mt-4">
+      <main className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 mt-4">
         
         {/* Creation Panel */}
         <div className="lg:col-span-5 space-y-8">
@@ -283,12 +283,12 @@ const App: React.FC = () => {
             </div>
 
             {/* Drift Types */}
-            <div className="grid grid-cols-2 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mb-8">
               {Object.entries(DRIFT_CONFIG).map(([type, config]) => (
                 <button
                   key={type}
                   onClick={() => setSelectedType(type as DriftType)}
-                  className={`p-4 rounded-[20px] border transition-all text-left flex flex-col gap-3 group/btn ${
+                  className={`p-3 md:p-4 rounded-[20px] border transition-all text-left flex flex-col gap-2 md:gap-3 group/btn ${
                     selectedType === type 
                     ? `bg-white/5 border-blue-500/40 shadow-[0_0_20px_rgba(59,130,246,0.1)]` 
                     : 'bg-transparent border-white/5 hover:border-white/10 opacity-70 grayscale hover:grayscale-0 hover:opacity-100'
@@ -321,7 +321,7 @@ const App: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div className="space-y-2">
                   <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 ml-1">Amount</label>
                   <div className="relative">
@@ -446,14 +446,14 @@ const App: React.FC = () => {
                       <div className="absolute top-0 left-0 w-1 h-full bg-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.5)]"></div>
                     )}
                     
-                    <div className="flex items-start justify-between mb-6">
+                    <div className="flex flex-col sm:flex-row items-start justify-between mb-6 gap-4">
                       <div className="flex items-center gap-4">
-                        <div className={`p-3 rounded-2xl ${config.bg} ${config.color} shadow-inner`}>
+                        <div className={`p-3 rounded-2xl ${config.bg} ${config.color} shadow-inner shrink-0`}>
                           {config.icon}
                         </div>
-                        <div>
-                          <div className="flex items-center gap-3">
-                            <h4 className="font-bold text-base text-slate-100">{config.label}</h4>
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 md:gap-3">
+                            <h4 className="font-bold text-base text-slate-100 whitespace-nowrap">{config.label}</h4>
                             <span className={`text-[9px] px-2.5 py-1 rounded-full uppercase font-black tracking-widest ${
                               drift.status === DriftStatus.EXECUTED ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
                               drift.status === DriftStatus.CANCELED ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
@@ -463,13 +463,13 @@ const App: React.FC = () => {
                               {drift.status}
                             </span>
                           </div>
-                          <p className="text-[11px] font-mono text-slate-500 mt-1.5 flex items-center gap-1.5">
-                            <ArrowRight className="w-3 h-3 opacity-50" />
-                            To: {drift.recipient}
+                          <p className="text-[11px] font-mono text-slate-500 mt-1.5 flex items-center gap-1.5 truncate">
+                            <ArrowRight className="w-3 h-3 opacity-50 shrink-0" />
+                            <span className="truncate">To: {drift.recipient}</span>
                           </p>
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className="text-left sm:text-right w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5">
                         <div className="text-xl font-bold text-white leading-tight font-mono">{drift.amount} <span className="text-xs text-slate-500 font-sans ml-0.5">ARC</span></div>
                         <div className="text-[10px] text-slate-500 uppercase font-black tracking-widest mt-1">Contract Payload</div>
                       </div>
@@ -513,20 +513,20 @@ const App: React.FC = () => {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                       <a 
                         href={`${ARC_TESTNET_EXPLORER}${drift.id}`} 
                         target="_blank" 
-                        className="text-[10px] font-bold text-slate-500 hover:text-blue-400 flex items-center gap-2 transition-all uppercase tracking-widest"
+                        className="text-[10px] font-bold text-slate-500 hover:text-blue-400 flex items-center gap-2 transition-all uppercase tracking-widest self-start sm:self-auto"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
                         Onchain Proof
                       </a>
-                      <div className="flex gap-3">
+                      <div className="flex flex-wrap gap-3 w-full sm:w-auto justify-end">
                         {(drift.status === DriftStatus.PENDING || drift.status === DriftStatus.STREAMING) && drift.type === DriftType.CANCELABLE && (
                           <button 
                             onClick={() => handleCancel(drift.id)}
-                            className="px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/20 transition-all flex items-center gap-2"
+                            className="px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/20 transition-all flex items-center gap-2 flex-1 sm:flex-none justify-center"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                             Revoke
@@ -535,7 +535,7 @@ const App: React.FC = () => {
                         {drift.status === DriftStatus.STREAMING && available > 0 && (
                           <button 
                             onClick={() => handleWithdraw(drift.id)}
-                            className="px-4 py-2 rounded-xl bg-blue-500 text-white shadow-[0_4px_12px_rgba(59,130,246,0.3)] text-[10px] font-black uppercase tracking-widest hover:bg-blue-400 hover:scale-105 transition-all flex items-center gap-2"
+                            className="px-4 py-2 rounded-xl bg-blue-500 text-white shadow-[0_4px_12px_rgba(59,130,246,0.3)] text-[10px] font-black uppercase tracking-widest hover:bg-blue-400 hover:scale-105 transition-all flex items-center gap-2 flex-1 sm:flex-none justify-center"
                           >
                             <TrendingUp className="w-3.5 h-3.5" />
                             Claim
@@ -544,7 +544,7 @@ const App: React.FC = () => {
                         {drift.status === DriftStatus.EXECUTED && drift.amount > drift.withdrawn && (
                            <button 
                             onClick={() => handleWithdraw(drift.id)}
-                            className="px-4 py-2 rounded-xl bg-green-500 text-white shadow-[0_4px_12px_rgba(34,197,94,0.3)] text-[10px] font-black uppercase tracking-widest hover:bg-green-400 transition-all flex items-center gap-2"
+                            className="px-4 py-2 rounded-xl bg-green-500 text-white shadow-[0_4px_12px_rgba(34,197,94,0.3)] text-[10px] font-black uppercase tracking-widest hover:bg-green-400 transition-all flex items-center gap-2 flex-1 sm:flex-none justify-center"
                           >
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             Finalize
@@ -561,15 +561,16 @@ const App: React.FC = () => {
       </main>
 
       {/* Floating Network Indicator */}
-      <div className="fixed bottom-8 right-8 flex items-center gap-4">
-        <div className="glass-card rounded-2xl p-4 pr-6 flex items-center gap-5 shadow-2xl border-white/10 group cursor-default">
-            <div className="w-12 h-12 rounded-xl bg-slate-900 flex items-center justify-center text-slate-400 border border-white/5 group-hover:border-blue-500/30 transition-all">
-                <ShieldCheck className="w-6 h-6 group-hover:text-blue-400" />
+      <div className="fixed bottom-6 right-6 md:bottom-8 md:right-8 flex items-center gap-4 z-50">
+        <div className="glass-card rounded-2xl p-3 md:p-4 pr-5 md:pr-6 flex items-center gap-4 md:gap-5 shadow-2xl border-white/10 group cursor-default">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-slate-900 flex items-center justify-center text-slate-400 border border-white/5 group-hover:border-blue-500/30 transition-all">
+                <ShieldCheck className="w-5 h-5 md:w-6 md:h-6 group-hover:text-blue-400" />
             </div>
             <div>
-                <div className="text-[10px] uppercase font-black text-slate-500 tracking-[0.2em] mb-0.5">Testnet Node</div>
-                <div className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                   ARC Protocol 2.0
+                <div className="text-[9px] md:text-[10px] uppercase font-black text-slate-500 tracking-[0.2em] mb-0.5">Testnet Node</div>
+                <div className="text-xs md:text-sm font-bold text-slate-100 flex items-center gap-2">
+                   <span className="hidden xs:inline">ARC Protocol 2.0</span>
+                   <span className="xs:hidden">ARC 2.0</span>
                    <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
                 </div>
             </div>

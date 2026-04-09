@@ -75,10 +75,9 @@ const App: React.FC = () => {
     const checkConnection = async () => {
       if (window.ethereum) {
         try {
-          const provider = new BrowserProvider(window.ethereum);
-          const accounts = await provider.listAccounts();
-          if (accounts.length > 0) {
-            setAccount(accounts[0].address);
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+          if (accounts && accounts.length > 0) {
+            setAccount(accounts[0]);
           }
         } catch (error) {
           console.error("Error checking connection:", error);
@@ -118,7 +117,7 @@ const App: React.FC = () => {
   // Handlers
   const connectWallet = async () => {
     if (!window.ethereum) {
-      setWalletError("No wallet detected. If you have MetaMask installed, try opening this app in a new tab using the button in the top right of the preview.");
+      setWalletError("No wallet detected. If you have a wallet extension installed, please open this app in a new tab (standalone mode). Browser extensions cannot interact with apps inside iframes.");
       setShowErrorModal(true);
       return;
     }
@@ -126,19 +125,32 @@ const App: React.FC = () => {
     setIsConnecting(true);
     setWalletError(null);
     try {
-      const provider = new BrowserProvider(window.ethereum);
-      const accounts = await provider.send("eth_requestAccounts", []);
+      // Use direct request for better compatibility with various wallets
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      
       if (accounts && accounts.length > 0) {
         setAccount(accounts[0]);
         setIsDemoMode(false);
+        setShowErrorModal(false);
+      } else {
+        throw new Error("No accounts returned");
       }
     } catch (error: any) {
-      console.error("Error connecting wallet:", error);
+      console.error("Detailed wallet connection error:", error);
+      
+      let message = "Failed to connect wallet.";
+      
       if (error.code === 4001) {
-        setWalletError("Connection request was rejected. Please try again.");
+        message = "Connection request was rejected in your wallet. Please try again and approve the request.";
+      } else if (error.code === -32002) {
+        message = "A connection request is already pending in your wallet. Please open your wallet extension and approve it.";
+      } else if (error.message?.includes("user rejected")) {
+        message = "The request was rejected. Please try again.";
       } else {
-        setWalletError("Failed to connect wallet. Please ensure your wallet is unlocked and try again.");
+        message = `Error (${error.code || 'unknown'}): ${error.message || 'Please ensure your wallet is unlocked and try again.'}`;
       }
+      
+      setWalletError(message);
       setShowErrorModal(true);
     } finally {
       setIsConnecting(false);
@@ -602,6 +614,15 @@ const App: React.FC = () => {
               {walletError}
             </p>
             <div className="flex flex-col gap-3">
+              <button 
+                onClick={() => {
+                  setShowErrorModal(false);
+                  connectWallet();
+                }}
+                className="w-full py-4 rounded-2xl bg-blue-600 text-white font-bold hover:bg-blue-500 transition-all shadow-lg shadow-blue-500/20"
+              >
+                Retry Connection
+              </button>
               <button 
                 onClick={() => setShowErrorModal(false)}
                 className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-bold hover:bg-white/10 transition-all"

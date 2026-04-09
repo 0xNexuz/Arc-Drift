@@ -1,0 +1,64 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ARC Drift | Time-Based Money</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --arc-navy: #030c1b;
+        --arc-blue-accent: #1e3a5f;
+        --arc-silver: #e2e8f0;
+      }
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #020617; /* Very dark slate */
+        background-image: radial-gradient(circle at top right, #0f172a, transparent),
+                          radial-gradient(circle at bottom left, #030c1b, transparent);
+        color: #f8fafc;
+        min-height: 100vh;
+      }
+      h1, h2, h3, h4, .font-heading {
+        font-family: 'Space Grotesk', sans-serif;
+      }
+      .drift-gradient {
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #94a3b8 100%);
+      }
+      .glass-card {
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .arc-logo-gradient {
+        background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      @keyframes flow {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+      .animate-flow {
+        background-size: 200% 200%;
+        animation: flow 4s ease infinite;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

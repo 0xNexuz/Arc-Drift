@@ -1,0 +1,7 @@
+{
+  "name": "ARC Drift",
+  "description": "A time-based onchain payment protocol on ARC Testnet that introduces time as a financial primitive for streaming, delayed, and cancelable transfers.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

@@ -21,6 +21,9 @@ import {
 } from 'lucide-react';
 import { DriftType, DriftStatus, DriftRule, DriftStats } from './types';
 import { DRIFT_CONFIG, ARC_TESTNET_EXPLORER, DEMO_WALLET_ADDRESS } from './constants';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useAccount, useBalance, useSwitchChain, useChainId } from 'wagmi';
+import { arcTestnet } from './Web3Provider';
 
 const ArcLogo = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -45,8 +48,16 @@ const App: React.FC = () => {
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [simulationOffset, setSimulationOffset] = useState(0);
   
-  // Simulation Account (Always active in Simulator Mode)
-  const account = DEMO_WALLET_ADDRESS;
+  // Real Wallet Integration
+  const { address, isConnected } = useAccount();
+  const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
+  const { data: balance } = useBalance({
+    address: address,
+  });
+
+  const isWrongNetwork = isConnected && chainId !== arcTestnet.id;
+  const account = isConnected ? address : DEMO_WALLET_ADDRESS;
 
   // Derived Values
   const effectiveTime = currentTime + simulationOffset;
@@ -150,19 +161,39 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen pb-20 px-4 md:px-8 bg-[#0a0a0c] text-slate-200">
-      {/* Simulation Banner */}
-      <div className="max-w-7xl mx-auto pt-4">
-        <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 text-blue-400 text-xs font-bold uppercase tracking-widest">
-            <Cpu className="w-4 h-4 animate-pulse" />
-            <span>Protocol Simulation Mode Active</span>
-          </div>
-          <div className="flex items-center gap-2 text-[10px] text-slate-500 font-mono">
-            Node: arc-testnet-sim-01
-            <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+      {/* Network Enforcement Banner */}
+      {isWrongNetwork && (
+        <div className="max-w-7xl mx-auto pt-4">
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3 text-amber-400 text-sm font-bold">
+              <ShieldCheck className="w-5 h-5" />
+              <span>Wrong Network Detected: Please switch to Arc Testnet</span>
+            </div>
+            <button 
+              onClick={() => switchChain({ chainId: arcTestnet.id })}
+              className="px-6 py-2 bg-amber-500 text-black text-xs font-black uppercase tracking-widest rounded-xl hover:bg-amber-400 transition-all"
+            >
+              Switch to Arc
+            </button>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Simulation Banner */}
+      {!isConnected && (
+        <div className="max-w-7xl mx-auto pt-4">
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-3 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 text-blue-400 text-xs font-bold uppercase tracking-widest">
+              <Cpu className="w-4 h-4 animate-pulse" />
+              <span>Protocol Simulation Mode Active</span>
+            </div>
+            <div className="flex items-center gap-2 text-[10px] text-slate-500 font-mono">
+              Connect wallet to use Live Testnet
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-500/40"></div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <nav className="flex flex-col sm:flex-row items-center justify-between py-8 max-w-7xl mx-auto gap-6 sm:gap-4">
@@ -173,21 +204,19 @@ const App: React.FC = () => {
         
         <div className="flex items-center gap-4">
            <div className="hidden md:flex items-center gap-6 mr-4 border-r border-white/5 pr-6">
+              {isConnected && balance && (
+                <div className="text-right">
+                  <div className="text-[10px] uppercase text-slate-500 font-black tracking-widest">Balance</div>
+                  <div className="text-white font-mono font-bold">{parseFloat(balance.formatted).toFixed(2)} {balance.symbol}</div>
+                </div>
+              )}
               <div className="text-right">
                 <div className="text-[10px] uppercase text-slate-500 font-black tracking-widest">TVL</div>
                 <div className="text-white font-mono font-bold">{stats.totalValueLocked.toFixed(2)} ARC</div>
               </div>
-              <div className="text-right">
-                <div className="text-[10px] uppercase text-slate-500 font-black tracking-widest">Active</div>
-                <div className="text-white font-mono font-bold">{stats.activeDrifts}</div>
-              </div>
            </div>
            
-           <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-white/5 border border-white/10">
-              <div className="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.6)]"></div>
-              <span className="text-xs font-mono text-slate-300">{formatAddress(account)}</span>
-              <span className="text-[10px] font-black uppercase text-slate-600 tracking-widest ml-2">Sim Wallet</span>
-           </div>
+           <ConnectButton />
         </div>
       </nav>
 

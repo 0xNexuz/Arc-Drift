@@ -22,7 +22,8 @@ import {
 import { DriftType, DriftStatus, DriftRule, DriftStats } from './types';
 import { DRIFT_CONFIG, ARC_TESTNET_EXPLORER, DEMO_WALLET_ADDRESS } from './constants';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useAccount, useBalance, useSwitchChain, useChainId } from 'wagmi';
+import { useAccount, useBalance, useSwitchChain, useChainId, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
+import { parseEther } from 'viem';
 import { arcTestnet } from './Web3Provider';
 
 const ArcLogo = ({ className }: { className?: string }) => (
@@ -39,12 +40,14 @@ const ArcLogo = ({ className }: { className?: string }) => (
 
 const App: React.FC = () => {
   // State
-  const [drifts, setDrifts] = useState<DriftRule[]>([]);
+  const [drifts, setDrifts] = useState<DriftRule[]>(() => {
+    const saved = localStorage.getItem('arc_drifts');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [selectedType, setSelectedType] = useState<DriftType>(DriftType.STREAMING);
   const [recipient, setRecipient] = useState('');
-  const [amount, setAmount] = useState(10);
+  const [amount, setAmount] = useState(1);
   const [duration, setDuration] = useState(24); // in hours
-  const [isCreating, setIsCreating] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [simulationOffset, setSimulationOffset] = useState(0);
   
@@ -56,8 +59,42 @@ const App: React.FC = () => {
     address: address,
   });
 
+  // Transaction Hooks
+  const { data: hash, error: sendError, isPending: isSending, sendTransaction } = useSendTransaction();
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash,
+  });
+
   const isWrongNetwork = isConnected && chainId !== arcTestnet.id;
   const account = isConnected ? address : DEMO_WALLET_ADDRESS;
+
+  // Persistence
+  useEffect(() => {
+    localStorage.setItem('arc_drifts', JSON.stringify(drifts));
+  }, [drifts]);
+
+  // Handle successful transaction
+  useEffect(() => {
+    if (isConfirmed && hash) {
+      const newDrift: DriftRule = {
+        id: hash, // Use tx hash as ID
+        sender: account || '0x',
+        recipient,
+        amount,
+        withdrawn: 0,
+        startTime: effectiveTime + (selectedType === DriftType.DELAYED ? 0 : 2000), 
+        endTime: effectiveTime + (duration * 60 * 60 * 1000),
+        type: selectedType,
+        status: DriftStatus.PENDING,
+        createdAt: effectiveTime,
+        label: `${selectedType} to ${recipient.slice(0, 6)}...`
+      };
+      
+      setDrifts(prev => [newDrift, ...prev]);
+      setRecipient('');
+      setAmount(1);
+    }
+  }, [isConfirmed, hash]);
 
   // Derived Values
   const effectiveTime = currentTime + simulationOffset;
@@ -98,31 +135,27 @@ const App: React.FC = () => {
   }, [effectiveTime]);
 
   // Handlers
-  const handleCreateDrift = () => {
+  const handleCreateDrift = async () => {
     if (!recipient || amount <= 0) return;
     
-    setIsCreating(true);
-    
-    setTimeout(() => {
-      const newDrift: DriftRule = {
-        id: Math.random().toString(36).substr(2, 9),
-        sender: account,
-        recipient,
-        amount,
-        withdrawn: 0,
-        startTime: effectiveTime + (selectedType === DriftType.DELAYED ? 0 : 2000), 
-        endTime: effectiveTime + (duration * 60 * 60 * 1000),
-        type: selectedType,
-        status: DriftStatus.PENDING,
-        createdAt: effectiveTime,
-        label: `${selectedType} to ${recipient.slice(0, 6)}...`
-      };
-      
-      setDrifts([newDrift, ...drifts]);
-      setIsCreating(false);
-      setRecipient('');
-      setAmount(10);
-    }, 800);
+    if (!isConnected) {
+      alert("Please connect your wallet first.");
+      return;
+    }
+
+    if (isWrongNetwork) {
+      switchChain({ chainId: arcTestnet.id });
+      return;
+    }
+
+    try {
+      sendTransaction({
+        to: recipient as `0x${string}`,
+        value: parseEther(amount.toString()),
+      });
+    } catch (err) {
+      console.error("Transaction failed:", err);
+    }
   };
 
   const handleCancel = (id: string) => {
@@ -306,20 +339,29 @@ const App: React.FC = () => {
 
               <button 
                 onClick={handleCreateDrift}
-                disabled={isCreating || !recipient}
+                disabled={isSending || isConfirming || !recipient}
                 className={`w-full py-5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all ${
-                  isCreating || !recipient ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-600/20'
+                  (isSending || isConfirming || !recipient) ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-600/20'
                 }`}
               >
-                {isCreating ? (
-                  <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                {isSending || isConfirming ? (
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                    <span>{isConfirming ? 'Confirming...' : 'Sending...'}</span>
+                  </div>
                 ) : (
                   <>
                     <ArrowRight className="w-5 h-5" />
-                    Deploy to Simulator
+                    Deploy Drift On-Chain
                   </>
                 )}
               </button>
+
+              {sendError && (
+                <p className="text-xs text-red-400 mt-2 text-center">
+                  {sendError.message.includes("User rejected") ? "Transaction rejected by user." : "Transaction failed. Please check your balance."}
+                </p>
+              )}
             </div>
           </div>
 
@@ -431,7 +473,10 @@ const App: React.FC = () => {
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                       <div className="text-[10px] font-bold text-slate-600 uppercase tracking-widest flex items-center gap-2">
                         <Activity className="w-3 h-3" />
-                        TX: {drift.id}
+                        TX: {drift.id.slice(0, 10)}...
+                        <a href={`https://explorer.arc.io/tx/${drift.id}`} target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300">
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
                       </div>
                       <div className="flex gap-3 w-full sm:w-auto">
                         {(drift.status === DriftStatus.PENDING || drift.status === DriftStatus.STREAMING) && drift.type === DriftType.CANCELABLE && (

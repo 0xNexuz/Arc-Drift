@@ -23,7 +23,7 @@ export const arcTestnet = defineChain({
     symbol: 'USDC',
   },
   rpcUrls: {
-    default: { http: ['https://5042002.rpc.thirdweb.com'] },
+    default: { http: ['https://rpc.testnet.arc.network'] },
   },
   blockExplorers: {
     default: { name: 'Arc Explorer', url: 'https://explorer.arc.io' },
